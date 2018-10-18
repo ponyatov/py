@@ -165,6 +165,62 @@ lexer = lex.lex()
 
 ## @}
 
+## @defgroup web Web interface
+## @{
+
+## @defgroup serv server
+## @brief (web)server
+## @ingroup sym
+## @{
+
+# https://www.junian.net/python-http-server-client/
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import socket,ssl,threading
+
+## http(s) (web)server
+class Server(Object):
+
+    ## tcp/ip address to bind
+    IP   = '127.0.0.1'
+
+    ## tcp/ip port to bind
+    PORT = 8885
+
+    ## http(s) GET handler
+    class HTTPhandler(BaseHTTPRequestHandler):
+        ## GET handler
+        ## @param[in] self.path URL
+        def do_GET(self):
+            # response header
+            self.send_response(200)
+            self.send_header('Content-type','text/plain')
+            self.end_headers()
+            # body
+            self.wfile.write('%s\n---------------\n%s' % (self.path, S.dump()))
+            return
+    
+    ## constructor with name
+    def __init__(self,V):
+        Object.__init__(self, V)
+        ## wrapped HTTP server
+        self.server = HTTPServer((self.IP,self.PORT), self.HTTPhandler)
+        self.server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        ## wrapped thread in background
+        self.thread = threading.Thread(target=self.server.serve_forever)
+        self.thread.daemon=True
+        self.thread.start()
+    ## stop server
+    def stop(self):
+        self.server.shutdown()
+        self.server.server_close()
+    ## warp in HTTPS
+    def https(self):
+        server.socket = ssl.wrap_socket(self.server.socket, keyfile='./key.pem', certfile='./cert.pem', server_side=True)
+        
+print Server('web')
+
+## @}
+
 ## @defgroup interp interpreter
 ## @ingroup fvm
 ## @{
@@ -179,37 +235,9 @@ def INTERPRET(SRC):
 
 INTERPRET(SRC)
 
-print S
-
-## @}
-
-## @defgroup web Web interface
-## @{
-
-## @defgroup serv server
-## @brief (web)server
-## @ingroup sym
-## @{
-
-import socket
-
-## (web)server
-class Server(Object):
-    ## tcp/ip address to bind
-    IP   = '127.0.0.1'
-    ## tcp/ip port to bind
-    PORT = 8888
-    ## response template
-    RESP = 'HTTP/1.0 200 OK\nContent-type: text/plain\nContent-length: %i\n\n%s'
-    def __init__(self,V):
-        Object.__init__(self, V)
-        self.sock = socket.socket()
-        self.sock.bind((self.IP,self.PORT))
-        self.sock.listen(0)
-        client,(ip,port) = self.sock.accept()
-        client.sendall(self.RESP % (len(self.dump()),self.dump()))
-        
-print Server('web')
+while True:
+    print S
+    INTERPRET(raw_input('> '))
 
 ## @}
 
