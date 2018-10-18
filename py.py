@@ -186,12 +186,31 @@ print S
 ## @defgroup web Web interface
 ## @{
 
+## @defgroup serv server
+## @brief (web)server
+## @ingroup sym
+## @{
+
 import socket
 
-## tcp/ip address to bind
-IP   = '127.0.0.1'
+## (web)server
+class Server(Object):
+    ## tcp/ip address to bind
+    IP   = '127.0.0.1'
+    ## tcp/ip port to bind
+    PORT = 8888
+    ## response template
+    RESP = 'HTTP/1.0 200 OK\nContent-type: text/plain\nContent-length: %i\n\n%s'
+    def __init__(self,V):
+        Object.__init__(self, V)
+        self.sock = socket.socket()
+        self.sock.bind((self.IP,self.PORT))
+        self.sock.listen(0)
+        client,(ip,port) = self.sock.accept()
+        client.sendall(self.RESP % (len(self.dump()),self.dump()))
+        
+print Server('web')
 
-## tcp/ip port to bind
-PORT = 8888
+## @}
 
 ## @}
